@@ -17,6 +17,8 @@
     let messages = [];
     let isProcessingQuestion = false;
     let currentConfig = null;
+    let usedQuestions = new Set(); // Track used questions
+    let hasShownClosingMessage = false; // Track if closing message was shown
     
     // Create animations and styles
     const styleSheet = document.createElement('style');
@@ -222,6 +224,34 @@
       .close-button:hover {
         background: rgba(255, 255, 255, 0.3);
       }
+
+      .closing-message {
+        padding: 16px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        margin: 16px;
+        text-align: center;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .closing-action-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 8px 16px;
+        background: var(--theme-color);
+        color: white;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: opacity 0.2s ease;
+      }
+
+      .closing-action-button:hover {
+        opacity: 0.9;
+      }
     `;
     document.head.appendChild(styleSheet);
   
@@ -243,6 +273,26 @@
       messagesContainer.appendChild(typingIndicator);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
       return typingIndicator;
+    }
+
+    function showClosingMessage() {
+      if (hasShownClosingMessage) return;
+      
+      const config = window.businessChatConfig || {};
+      const messagesContainer = document.querySelector('.chat-messages');
+      if (!messagesContainer) return;
+
+      const closingMessage = document.createElement('div');
+      closingMessage.className = 'closing-message';
+      closingMessage.innerHTML = `
+        <p>${config.messageClosing || 'To continue chatting please reach us via the link below:'}</p>
+        <a href="${config.messageClosingActionUrl || '#'}" target="_blank" class="closing-action-button">
+          ${config.messageClosingActionButton || 'Contact Us'}
+        </a>
+      `;
+      messagesContainer.appendChild(closingMessage);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      hasShownClosingMessage = true;
     }
   
     function autoReply(question) {
@@ -277,6 +327,29 @@
         }
   
         const typingIndicator = showTypingIndicator();
+
+        // Add the question to used questions set
+        usedQuestions.add(question);
+
+        // Update quick questions section
+        const quickQuestionsContainer = document.querySelector('.quick-questions');
+        if (quickQuestionsContainer) {
+          const remainingQuestions = config.quickQuestions?.filter(q => !usedQuestions.has(q.question)) || [];
+          quickQuestionsContainer.innerHTML = remainingQuestions.map(q => `
+            <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
+              ${q.question}
+            </button>
+          `).join('');
+
+          // Hide the container if no questions remain
+          if (remainingQuestions.length === 0) {
+            quickQuestionsContainer.style.display = 'none';
+            // Show closing message after a short delay
+            setTimeout(() => {
+              showClosingMessage();
+            }, 1000);
+          }
+        }
   
         setTimeout(() => {
           if (typingIndicator) {
@@ -337,10 +410,10 @@
         </div>
       `).join('');
   
-      const validQuickQuestions = config.quickQuestions?.filter(q => q.question && q.answer) || [];
-      const quickQuestionsHtml = validQuickQuestions.length > 0 ? `
+      const remainingQuestions = config.quickQuestions?.filter(q => !usedQuestions.has(q.question)) || [];
+      const quickQuestionsHtml = remainingQuestions.length > 0 ? `
         <div class="quick-questions">
-          ${validQuickQuestions.map(q => `
+          ${remainingQuestions.map(q => `
             <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
               ${q.question}
             </button>
@@ -355,7 +428,7 @@
               <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
                 ${config.image ? 
                   `<img src="${config.image}" alt="${config.businessName || 'Chat'}" style="width: 100%; height: 100%; object-fit: cover;">` :
-                  `<div style="width: 100%; height: 100%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                  `<div style="width: 100%; height: 100%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                     </svg>
@@ -375,6 +448,14 @@
             </div>
             <div class="chat-messages">
               ${messagesHtml}
+              ${remainingQuestions.length === 0 && !hasShownClosingMessage ? `
+                <div class="closing-message">
+                  <p>${config.messageClosing || 'To continue chatting please reach us via the link below:'}</p>
+                  <a href="${config.messageClosingActionUrl || '#'}" target="_blank" class="closing-action-button">
+                    ${config.messageClosingActionButton || 'Contact Us'}
+                  </a>
+                </div>
+              ` : ''}
             </div>
             ${quickQuestionsHtml}
           </div>
@@ -428,26 +509,7 @@
             const messagesContainer = document.querySelector('.chat-messages');
             const scrollPosition = messagesContainer ? messagesContainer.scrollTop : 0;
             
-            // Only update necessary parts
-            const header = document.querySelector('.chat-header');
-            if (header) {
-              header.style.background = currentConfig.colorScheme || '#4f46e5';
-              const businessName = header.querySelector('div > div');
-              if (businessName) {
-                businessName.textContent = currentConfig.businessName || 'Chat';
-              }
-            }
-            
-            // Update quick questions without full re-render
-            const quickQuestionsContainer = document.querySelector('.quick-questions');
-            if (quickQuestionsContainer) {
-              const validQuickQuestions = currentConfig.quickQuestions?.filter(q => q.question && q.answer) || [];
-              quickQuestionsContainer.innerHTML = validQuickQuestions.map(q => `
-                <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
-                  ${q.question}
-                </button>
-              `).join('');
-            }
+            widget.innerHTML = renderChat();
             
             if (messagesContainer) {
               messagesContainer.scrollTop = scrollPosition;

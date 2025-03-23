@@ -112,6 +112,32 @@
                     </div>
                 </div>
 
+                <!-- Closing Message Configuration -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Closing Message</h2>
+                    
+                    <div>
+                        <label for="messageClosing" class="block text-sm font-medium text-gray-700">Closing Message</label>
+                        <textarea id="messageClosing" name="messageClosing" rows="2"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter the message to show when all questions are answered"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="messageClosingActionButton" class="block text-sm font-medium text-gray-700">Action Button Text</label>
+                        <input type="text" id="messageClosingActionButton" name="messageClosingActionButton"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter the button text (e.g., 'Contact on Facebook')">
+                    </div>
+
+                    <div>
+                        <label for="messageClosingActionUrl" class="block text-sm font-medium text-gray-700">Action URL</label>
+                        <input type="text" id="messageClosingActionUrl" name="messageClosingActionUrl"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter the URL (e.g., https://m.me/username)">
+                    </div>
+                </div>
+
                 <!-- Installation Code -->
                 <div class="space-y-4">
                     <h2 class="text-xl font-semibold text-gray-900">Installation Code</h2>
@@ -136,6 +162,9 @@
                 colorScheme: document.getElementById('colorScheme').value,
                 image: imageBase64,
                 welcomeMessage: document.getElementById('welcomeMessage').value,
+                messageClosing: document.getElementById('messageClosing').value,
+                messageClosingActionButton: document.getElementById('messageClosingActionButton').value,
+                messageClosingActionUrl: document.getElementById('messageClosingActionUrl').value,
                 quickQuestions: []
             };
 
@@ -163,7 +192,7 @@
         }
 
         // Handle image upload
-        document.getElementById('businessIcon').addEventListener('change', (e) => {
+        document.getElementByI d('businessIcon').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();

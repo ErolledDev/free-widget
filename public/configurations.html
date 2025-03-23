@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Widget Configurator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        .color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="bg-white rounded-xl shadow-lg p-8 mt-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Widget Configuration</h1>
+            
+            <form id="configForm" class="space-y-8">
+                <!-- Business Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Business Information</h2>
+                    
+                    <div>
+                        <label for="businessName" class="block text-sm font-medium text-gray-700">Business Name</label>
+                        <input type="text" id="businessName" name="businessName" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter your business name">
+                    </div>
+
+                    <div>
+                        <label for="colorScheme" class="block text-sm font-medium text-gray-700">Color Scheme</label>
+                        <input type="color" id="colorScheme" name="colorScheme" value="#4f46e5"
+                            class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 color-picker">
+                    </div>
+
+                    <div>
+                        <label for="businessIcon" class="block text-sm font-medium text-gray-700">Business Icon</label>
+                        <input type="file" id="businessIcon" name="businessIcon" accept="image/*"
+                            class="mt-1 block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-indigo-50 file:text-indigo-700
+                            hover:file:bg-indigo-100">
+                    </div>
+
+                    <div>
+                        <label for="welcomeMessage" class="block text-sm font-medium text-gray-700">Welcome Message</label>
+                        <textarea id="welcomeMessage" name="welcomeMessage" rows="3"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter a welcome message for your visitors"></textarea>
+                    </div>
+                </div>
+
+                <!-- Quick Questions -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Quick Questions & Answers</h2>
+                    
+                    <div id="quickQuestions" class="space-y-6">
+                        <!-- Question 1 -->
+                        <div class="p-4 bg-gray-50 rounded-lg space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Question 1</label>
+                                <input type="text" name="question1" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter your question">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Answer 1</label>
+                                <textarea name="answer1" rows="2"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter the answer"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Question 2 -->
+                        <div class="p-4 bg-gray-50 rounded-lg space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Question 2</label>
+                                <input type="text" name="question2"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter your question">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Answer 2</label>
+                                <textarea name="answer2" rows="2"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter the answer"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Question 3 -->
+                        <div class="p-4 bg-gray-50 rounded-lg space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Question 3</label>
+                                <input type="text" name="question3"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter your question">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Answer 3</label>
+                                <textarea name="answer3" rows="2"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Enter the answer"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation Code -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Installation Code</h2>
+                    <div class="relative">
+                        <pre id="installationCode" class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm"></pre>
+                        <button type="button" id="copyButton"
+                            class="absolute top-2 right-2 px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-sm">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let imageBase64 = '';
+
+        function generateConfig() {
+            const config = {
+                businessName: document.getElementById('businessName').value,
+                colorScheme: document.getElementById('colorScheme').value,
+                image: imageBase64,
+                welcomeMessage: document.getElementById('welcomeMessage').value,
+                quickQuestions: []
+            };
+
+            // Collect quick questions
+            for (let i = 1; i <= 3; i++) {
+                const question = document.querySelector(`[name="question${i}"]`).value;
+                const answer = document.querySelector(`[name="answer${i}"]`).value;
+                if (question && answer) {
+                    config.quickQuestions.push({ question, answer });
+                }
+            }
+
+            return config;
+        }
+
+        function updateInstallationCode() {
+            const config = generateConfig();
+            const code = `<!-- Business Widget Installation Code -->
+<script src="https://free-widget.netlify.app/chat.js"><\/script>
+<script>
+    window.businessChatConfig = ${JSON.stringify(config, null, 2)};
+<\/script>`;
+            
+            document.getElementById('installationCode').textContent = code;
+        }
+
+        // Handle image upload
+        document.getElementById('businessIcon').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    imageBase64 = reader.result;
+                    updateInstallationCode();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form changes
+        document.getElementById('configForm').addEventListener('input', (e) => {
+            if (e.target.id !== 'businessIcon') {
+                updateInstallationCode();
+            }
+        });
+
+        // Handle copy button
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const code = document.getElementById('installationCode').textContent;
+            navigator.clipboard.writeText(code);
+            
+            const button = document.getElementById('copyButton');
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        });
+
+        // Initial code generation
+        updateInstallationCode();
+    </script>
+</body>
+</html>

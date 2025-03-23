@@ -28,6 +28,12 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+
+    @keyframes typingAnimation {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
     
     .chat-widget-container {
       animation: slideIn 0.3s ease forwards;
@@ -126,6 +132,28 @@
       text-align: left;
     }
 
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: #f3f4f6;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+      margin-top: 8px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #9ca3af;
+      border-radius: 50%;
+    }
+
+    .typing-dot:nth-child(1) { animation: typingAnimation 1s infinite 0s; }
+    .typing-dot:nth-child(2) { animation: typingAnimation 1s infinite 0.2s; }
+    .typing-dot:nth-child(3) { animation: typingAnimation 1s infinite 0.4s; }
+
     .quick-questions {
       padding: 16px;
       display: flex;
@@ -182,6 +210,22 @@
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  function showTypingIndicator() {
+    const messagesContainer = document.querySelector('.chat-messages');
+    if (!messagesContainer) return;
+
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'typing-indicator';
+    typingIndicator.innerHTML = `
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    `;
+    messagesContainer.appendChild(typingIndicator);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return typingIndicator;
+  }
+
   function autoReply(question) {
     const config = window.businessChatConfig || {};
     const matchingQuestion = config.quickQuestions?.find(q => q.question === question);
@@ -193,22 +237,15 @@
 
       const time = formatTime(new Date());
       
-      // Add user's question
+      // Add user's question and immediately update the chat
       messages.push({
         content: question,
         type: 'user',
         time: time
       });
 
-      // Add bot's response immediately
-      messages.push({
-        content: matchingQuestion.answer,
-        type: 'bot',
-        time: time
-      });
-
-      // Update the chat display
-      renderChat();
+      // Update chat to show user's message
+      widget.innerHTML = renderChat();
 
       // Scroll to bottom
       const messagesContainer = document.querySelector('.chat-messages');
@@ -216,10 +253,34 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
 
-      // Re-enable buttons after a short delay
+      // Show typing indicator
+      const typingIndicator = showTypingIndicator();
+
+      // Add bot's response after a delay
       setTimeout(() => {
+        // Remove typing indicator
+        if (typingIndicator) {
+          typingIndicator.remove();
+        }
+
+        messages.push({
+          content: matchingQuestion.answer,
+          type: 'bot',
+          time: formatTime(new Date())
+        });
+
+        // Update chat with bot's response
+        widget.innerHTML = renderChat();
+
+        // Scroll to bottom again
+        const updatedMessagesContainer = document.querySelector('.chat-messages');
+        if (updatedMessagesContainer) {
+          updatedMessagesContainer.scrollTop = updatedMessagesContainer.scrollHeight;
+        }
+
+        // Re-enable buttons
         buttons.forEach(btn => btn.disabled = false);
-      }, 300);
+      }, 1500); // 1.5s delay for natural feeling with typing indicator
     }
   }
 
@@ -244,6 +305,7 @@
     const color = config.colorScheme || '#4f46e5';
     document.documentElement.style.setProperty('--theme-color', color);
 
+    // Render all messages
     const messagesHtml = messages.map(msg => `
       <div class="message-container ${msg.type}">
         <div class="message ${msg.type}">
@@ -253,15 +315,15 @@
       </div>
     `).join('');
 
-    const quickQuestionsHtml = config.quickQuestions?.filter(q => q.question && q.answer)?.length ? `
+    // Only show quick questions that have both question and answer
+    const validQuickQuestions = config.quickQuestions?.filter(q => q.question && q.answer) || [];
+    const quickQuestionsHtml = validQuickQuestions.length > 0 ? `
       <div class="quick-questions">
-        ${config.quickQuestions
-          .filter(q => q.question && q.answer)
-          .map(q => `
-            <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
-              ${q.question}
-            </button>
-          `).join('')}
+        ${validQuickQuestions.map(q => `
+          <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
+            ${q.question}
+          </button>
+        `).join('')}
       </div>
     ` : '';
 

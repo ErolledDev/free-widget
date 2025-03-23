@@ -10,16 +10,44 @@
             line-height: 1.5;
             margin: 0;
             padding: 20px;
+            background-color: #f9fafb;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         h1 {
             color: #1f2937;
+            margin-top: 0;
         }
         p {
             color: #4b5563;
+        }
+        .config-editor {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        .config-editor h2 {
+            margin-top: 0;
+            color: #374151;
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #4338ca;
         }
     </style>
 </head>
@@ -28,9 +56,14 @@
         <h1>Test Page for Business Widget</h1>
         <p>This is a sample page to test your business widget. The widget should appear in the bottom right corner.</p>
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        
+        <div class="config-editor">
+            <h2>Live Configuration Editor</h2>
+            <button onclick="updateConfig()">Update Widget Configuration</button>
+        </div>
     </div>
 
-    <!-- Widget Installation Code - Replace with your configuration -->
+    <!-- Widget Installation Code -->
     <script src="chat.js"></script>
     <script>
         window.businessChatConfig = {
@@ -43,6 +76,21 @@
                 { name: "WhatsApp", url: "https://wa.me/1234567890" }
             ]
         };
+
+        // Function to demonstrate live updates
+        function updateConfig() {
+            window.businessChatConfig = {
+                ...window.businessChatConfig,
+                businessName: "Updated Business Name",
+                colorScheme: "#ef4444",
+                welcomeMessage: "🎉 Configuration updated! This message changed dynamically!",
+                socialLinks: [
+                    { name: "Facebook", url: "https://facebook.com/example" },
+                    { name: "WhatsApp", url: "https://wa.me/1234567890" },
+                    { name: "Email", url: "mailto:contact@example.com" }
+                ]
+            };
+        }
     </script>
 </body>
 </html>

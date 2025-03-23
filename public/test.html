@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Test Page</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1f2937;
+        }
+        p {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Page for Business Widget</h1>
+        <p>This is a sample page to test your business widget. The widget should appear in the bottom right corner.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+
+    <!-- Widget Installation Code - Replace with your configuration -->
+    <script src="chat.js"></script>
+    <script>
+        window.businessChatConfig = {
+            businessName: "Test Business",
+            colorScheme: "#4f46e5",
+            welcomeMessage: "👋 Welcome to our test page! How can we help you today?",
+            socialLinks: [
+                { name: "Website", url: "https://example.com" },
+                { name: "Twitter", url: "https://twitter.com/example" },
+                { name: "WhatsApp", url: "https://wa.me/1234567890" }
+            ]
+        };
+    </script>
+</body>
+</html>

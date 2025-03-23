@@ -82,7 +82,8 @@ function App() {
       ...config,
       socialLinks: selectedSocials.map(({ name, url }) => ({ name, url }))
     };
-    return `<script src="https://free-widget.netlify.app/chat.js"></script>
+    return `<!-- Business Widget Installation Code -->
+<script src="https://free-widget.netlify.app/chat.js"></script>
 <script>
   window.businessChatConfig = ${JSON.stringify(configForScript, null, 2)};
 </script>`;

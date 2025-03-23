@@ -5,10 +5,16 @@ export interface SocialPlatform {
   url?: string;
 }
 
+export interface QuickQuestion {
+  question: string;
+  answer: string;
+}
+
 export interface WidgetConfig {
   businessName: string;
   colorScheme: string;
   image: string;
   welcomeMessage: string;
   socialLinks: SocialPlatform[];
+  quickQuestions: QuickQuestion[];
 }

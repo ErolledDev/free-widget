@@ -14,6 +14,10 @@
   widget.style.fontFamily = 'system-ui, -apple-system, sans-serif';
   
   let isExpanded = false;
+  let isTyping = false;
+  
+  // Initialize messages from localStorage or empty array
+  let messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
   
   // Create animations and styles
   const styleSheet = document.createElement('style');
@@ -21,6 +25,17 @@
     @keyframes slideIn {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes typing {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
     }
     
     .chat-widget-container {
@@ -45,10 +60,13 @@
     
     .chat-window {
       width: 360px;
+      height: 520px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     
     .chat-header {
@@ -56,33 +74,125 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
-    
-    .chat-content {
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
       padding: 16px;
-    }
-    
-    .social-links {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-    
-    .social-link {
-      padding: 8px 16px;
-      border-radius: 8px;
-      color: white;
-      text-decoration: none;
-      font-size: 14px;
-      transition: opacity 0.2s ease;
+
+    .message-container {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .message-container.sent {
+      align-self: flex-end;
+    }
+
+    .message-container.received {
+      align-self: flex-start;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 16px;
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .message.sent {
+      background: var(--theme-color);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.received {
+      background: #f3f4f6;
+      color: #1f2937;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: #9ca3af;
+      margin: 0 4px;
+    }
+
+    .message-time.sent {
+      text-align: right;
+    }
+
+    .message-time.received {
+      text-align: left;
+    }
+
+    .quick-questions {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
     }
-    
-    .social-link:hover {
-      opacity: 0.9;
+
+    .quick-question-btn {
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left;
+      transition: all 0.2s ease;
+      color: #374151;
     }
+
+    .quick-question-btn:hover {
+      background: #e5e7eb;
+      transform: translateY(-1px);
+    }
+
+    .quick-question-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .typing-container {
+      align-self: flex-start;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: #f3f4f6;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: #9ca3af;
+      border-radius: 50%;
+    }
+
+    .typing-dot:nth-child(1) { animation: typing 1s infinite 0s; }
+    .typing-dot:nth-child(2) { animation: typing 1s infinite 0.2s; }
+    .typing-dot:nth-child(3) { animation: typing 1s infinite 0.4s; }
     
     .close-button {
       width: 32px;
@@ -104,6 +214,84 @@
   `;
   document.head.appendChild(styleSheet);
 
+  function formatTime(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function saveMessages() {
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+  }
+
+  function addMessage(content, isSent = false) {
+    const time = new Date();
+    messages.push({
+      content,
+      isSent,
+      time: formatTime(time)
+    });
+    saveMessages();
+    renderChat();
+
+    // Scroll to bottom
+    const messagesContainer = document.querySelector('.chat-messages');
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }
+
+  function showTypingIndicator() {
+    if (isTyping) return null;
+    isTyping = true;
+    
+    const messagesContainer = document.querySelector('.chat-messages');
+    if (!messagesContainer) return null;
+
+    const typingContainer = document.createElement('div');
+    typingContainer.className = 'typing-container';
+    typingContainer.innerHTML = `
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    `;
+    messagesContainer.appendChild(typingContainer);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    return typingContainer;
+  }
+
+  function autoReply(question) {
+    const config = window.businessChatConfig || {};
+    const matchingQuestion = config.quickQuestions?.find(q => q.question === question);
+    
+    if (matchingQuestion) {
+      // Disable all quick question buttons while processing
+      const buttons = document.querySelectorAll('.quick-question-btn');
+      buttons.forEach(btn => btn.disabled = true);
+
+      // Add user's question
+      addMessage(question, true);
+
+      // Show typing indicator
+      const typingIndicator = showTypingIndicator();
+      
+      // Simulate typing delay and then respond
+      setTimeout(() => {
+        if (typingIndicator) {
+          typingIndicator.remove();
+          isTyping = false;
+        }
+        
+        // Add bot's response
+        addMessage(matchingQuestion.answer, false);
+
+        // Re-enable quick question buttons
+        buttons.forEach(btn => btn.disabled = false);
+      }, 1500);
+    }
+  }
+
   function renderBubble(config = {}) {
     const color = config.colorScheme || '#4f46e5';
     return `
@@ -120,8 +308,32 @@
     `;
   }
 
-  function renderExpandedChat(config = {}) {
+  function renderChat() {
+    const config = window.businessChatConfig || {};
     const color = config.colorScheme || '#4f46e5';
+    document.documentElement.style.setProperty('--theme-color', color);
+
+    const messagesHtml = messages.map(msg => `
+      <div class="message-container ${msg.isSent ? 'sent' : 'received'}">
+        <div class="message ${msg.isSent ? 'sent' : 'received'}">
+          ${msg.content}
+        </div>
+        <div class="message-time ${msg.isSent ? 'sent' : 'received'}">${msg.time}</div>
+      </div>
+    `).join('');
+
+    const quickQuestionsHtml = config.quickQuestions?.filter(q => q.question && q.answer)?.length ? `
+      <div class="quick-questions">
+        ${config.quickQuestions
+          .filter(q => q.question && q.answer)
+          .map(q => `
+            <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
+              ${q.question}
+            </button>
+          `).join('')}
+      </div>
+    ` : '';
+
     return `
       <div class="chat-widget-container">
         <div class="chat-window">
@@ -147,30 +359,10 @@
               </svg>
             </button>
           </div>
-          <div class="chat-content">
-            <div style="display: flex; gap: 16px; align-items: flex-start;">
-              <div style="flex: 1;">
-                <p style="margin: 0; color: #1f2937; line-height: 1.5;">
-                  ${config.welcomeMessage || 'Welcome! How can we help you today?'}
-                </p>
-              </div>
-              ${config.socialLinks && config.socialLinks.length > 0 ? `
-                <div class="social-links">
-                  ${config.socialLinks.map(platform => `
-                    <a 
-                      href="${platform.url}" 
-                      target="_blank"
-                      rel="noopener noreferrer" 
-                      class="social-link"
-                      style="background: ${color}"
-                    >
-                      ${platform.name}
-                    </a>
-                  `).join('')}
-                </div>
-              ` : ''}
-            </div>
+          <div class="chat-messages">
+            ${messagesHtml}
           </div>
+          ${quickQuestionsHtml}
         </div>
       </div>
     `;
@@ -183,7 +375,16 @@
   // Handle toggling
   widget.addEventListener('click', () => {
     if (!isExpanded) {
-      widget.innerHTML = renderExpandedChat(window.businessChatConfig || {});
+      // Only add welcome message if there are no messages
+      if (messages.length === 0) {
+        messages.push({
+          content: window.businessChatConfig?.welcomeMessage || 'Welcome! How can I help you today?',
+          isSent: false,
+          time: formatTime(new Date())
+        });
+        saveMessages();
+      }
+      widget.innerHTML = renderChat();
     }
     isExpanded = true;
   });
@@ -191,6 +392,13 @@
   widget.addEventListener('toggleChat', () => {
     widget.innerHTML = renderBubble(window.businessChatConfig || {});
     isExpanded = false;
+    isTyping = false;
+  });
+
+  widget.addEventListener('quickQuestion', (e) => {
+    if (!isTyping) {
+      autoReply(e.detail);
+    }
   });
 
   // Watch for configuration changes
@@ -202,7 +410,7 @@
     if (currentConfigString !== lastConfig) {
       lastConfig = currentConfigString;
       widget.innerHTML = isExpanded ? 
-        renderExpandedChat(currentConfig) : 
+        renderChat() : 
         renderBubble(currentConfig);
     }
   }, 100);

@@ -15,9 +15,11 @@ import {
   MessageSquare,
   Mail,
   Globe,
-  MessagesSquare
+  MessagesSquare,
+  Plus,
+  Minus
 } from 'lucide-react';
-import { SocialPlatform, WidgetConfig } from './types';
+import { SocialPlatform, WidgetConfig, QuickQuestion } from './types';
 
 function App() {
   const [copied, setCopied] = useState(false);
@@ -26,7 +28,12 @@ function App() {
     colorScheme: '#4f46e5',
     image: '',
     welcomeMessage: '',
-    socialLinks: []
+    socialLinks: [],
+    quickQuestions: [
+      { question: '', answer: '' },
+      { question: '', answer: '' },
+      { question: '', answer: '' }
+    ]
   });
 
   const [selectedSocials, setSelectedSocials] = useState<SocialPlatform[]>([]);
@@ -75,6 +82,15 @@ function App() {
           : social
       )
     );
+  };
+
+  const updateQuickQuestion = (index: number, field: keyof QuickQuestion, value: string) => {
+    setConfig(prev => ({
+      ...prev,
+      quickQuestions: prev.quickQuestions.map((q, i) => 
+        i === index ? { ...q, [field]: value } : q
+      )
+    }));
   };
 
   const generateCode = () => {
@@ -163,6 +179,36 @@ function App() {
             </div>
 
             <div className="bg-white shadow-lg rounded-lg p-6 space-y-6">
+              <h2 className="text-xl font-semibold text-gray-900">Quick Questions & Auto-Replies</h2>
+              <div className="space-y-6">
+                {config.quickQuestions.map((q, index) => (
+                  <div key={index} className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Question {index + 1}</label>
+                      <input
+                        type="text"
+                        value={q.question}
+                        onChange={(e) => updateQuickQuestion(index, 'question', e.target.value)}
+                        placeholder="Enter a quick question"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Auto Reply</label>
+                      <textarea
+                        value={q.answer}
+                        onChange={(e) => updateQuickQuestion(index, 'answer', e.target.value)}
+                        placeholder="Enter the automatic response"
+                        rows={2}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white shadow-lg rounded-lg p-6 space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Social Links</h2>
               <div className="space-y-6">
                 {socialPlatforms.map((platform) => {
@@ -203,7 +249,7 @@ function App() {
           <div className="space-y-8">
             <div className="bg-white shadow-lg rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Widget Preview</h2>
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 h-64 flex items-center justify-center">
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 h-[600px] flex items-center justify-center">
                 <div className="text-center">
                   <div className="flex justify-center mb-4">
                     {config.image ? (
@@ -216,6 +262,13 @@ function App() {
                   </div>
                   <h3 className="font-medium text-gray-900">{config.businessName || 'Your Business Name'}</h3>
                   <p className="text-gray-500 mt-2">{config.welcomeMessage || 'Welcome to our business!'}</p>
+                  <div className="mt-4 space-y-2">
+                    {config.quickQuestions.map((q, i) => (
+                      <div key={i} className="text-sm text-gray-600">
+                        {q.question && `Q: ${q.question}`}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

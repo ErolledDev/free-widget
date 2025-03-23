@@ -14,10 +14,7 @@
   widget.style.fontFamily = 'system-ui, -apple-system, sans-serif';
   
   let isExpanded = false;
-  let isTyping = false;
-  
-  // Initialize messages from localStorage or empty array
-  let messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+  let messages = [];
   
   // Create animations and styles
   const styleSheet = document.createElement('style');
@@ -30,12 +27,6 @@
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
-    }
-
-    @keyframes typing {
-      0% { opacity: 0.3; }
-      50% { opacity: 1; }
-      100% { opacity: 0.3; }
     }
     
     .chat-widget-container {
@@ -94,11 +85,11 @@
       animation: fadeIn 0.3s ease;
     }
 
-    .message-container.sent {
+    .message-container.user {
       align-self: flex-end;
     }
 
-    .message-container.received {
+    .message-container.bot {
       align-self: flex-start;
     }
 
@@ -109,13 +100,13 @@
       word-wrap: break-word;
     }
 
-    .message.sent {
+    .message.user {
       background: var(--theme-color);
       color: white;
       border-bottom-right-radius: 4px;
     }
 
-    .message.received {
+    .message.bot {
       background: #f3f4f6;
       color: #1f2937;
       border-bottom-left-radius: 4px;
@@ -127,11 +118,11 @@
       margin: 0 4px;
     }
 
-    .message-time.sent {
+    .message-time.user {
       text-align: right;
     }
 
-    .message-time.received {
+    .message-time.bot {
       text-align: left;
     }
 
@@ -166,33 +157,6 @@
       cursor: not-allowed;
       transform: none;
     }
-
-    .typing-container {
-      align-self: flex-start;
-      max-width: 80%;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .typing-indicator {
-      display: flex;
-      gap: 4px;
-      padding: 12px 16px;
-      background: #f3f4f6;
-      border-radius: 16px;
-      border-bottom-left-radius: 4px;
-      width: fit-content;
-    }
-
-    .typing-dot {
-      width: 8px;
-      height: 8px;
-      background: #9ca3af;
-      border-radius: 50%;
-    }
-
-    .typing-dot:nth-child(1) { animation: typing 1s infinite 0s; }
-    .typing-dot:nth-child(2) { animation: typing 1s infinite 0.2s; }
-    .typing-dot:nth-child(3) { animation: typing 1s infinite 0.4s; }
     
     .close-button {
       width: 32px;
@@ -218,49 +182,6 @@
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  function saveMessages() {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-  }
-
-  function addMessage(content, isSent = false) {
-    const time = new Date();
-    messages.push({
-      content,
-      isSent,
-      time: formatTime(time)
-    });
-    saveMessages();
-    renderChat();
-
-    // Scroll to bottom
-    const messagesContainer = document.querySelector('.chat-messages');
-    if (messagesContainer) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-  }
-
-  function showTypingIndicator() {
-    if (isTyping) return null;
-    isTyping = true;
-    
-    const messagesContainer = document.querySelector('.chat-messages');
-    if (!messagesContainer) return null;
-
-    const typingContainer = document.createElement('div');
-    typingContainer.className = 'typing-container';
-    typingContainer.innerHTML = `
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
-    `;
-    messagesContainer.appendChild(typingContainer);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    return typingContainer;
-  }
-
   function autoReply(question) {
     const config = window.businessChatConfig || {};
     const matchingQuestion = config.quickQuestions?.find(q => q.question === question);
@@ -270,25 +191,35 @@
       const buttons = document.querySelectorAll('.quick-question-btn');
       buttons.forEach(btn => btn.disabled = true);
 
-      // Add user's question
-      addMessage(question, true);
-
-      // Show typing indicator
-      const typingIndicator = showTypingIndicator();
+      const time = formatTime(new Date());
       
-      // Simulate typing delay and then respond
-      setTimeout(() => {
-        if (typingIndicator) {
-          typingIndicator.remove();
-          isTyping = false;
-        }
-        
-        // Add bot's response
-        addMessage(matchingQuestion.answer, false);
+      // Add user's question
+      messages.push({
+        content: question,
+        type: 'user',
+        time: time
+      });
 
-        // Re-enable quick question buttons
+      // Add bot's response immediately
+      messages.push({
+        content: matchingQuestion.answer,
+        type: 'bot',
+        time: time
+      });
+
+      // Update the chat display
+      renderChat();
+
+      // Scroll to bottom
+      const messagesContainer = document.querySelector('.chat-messages');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // Re-enable buttons after a short delay
+      setTimeout(() => {
         buttons.forEach(btn => btn.disabled = false);
-      }, 1500);
+      }, 300);
     }
   }
 
@@ -314,11 +245,11 @@
     document.documentElement.style.setProperty('--theme-color', color);
 
     const messagesHtml = messages.map(msg => `
-      <div class="message-container ${msg.isSent ? 'sent' : 'received'}">
-        <div class="message ${msg.isSent ? 'sent' : 'received'}">
+      <div class="message-container ${msg.type}">
+        <div class="message ${msg.type}">
           ${msg.content}
         </div>
-        <div class="message-time ${msg.isSent ? 'sent' : 'received'}">${msg.time}</div>
+        <div class="message-time ${msg.type}">${msg.time}</div>
       </div>
     `).join('');
 
@@ -379,10 +310,9 @@
       if (messages.length === 0) {
         messages.push({
           content: window.businessChatConfig?.welcomeMessage || 'Welcome! How can I help you today?',
-          isSent: false,
+          type: 'bot',
           time: formatTime(new Date())
         });
-        saveMessages();
       }
       widget.innerHTML = renderChat();
     }
@@ -392,13 +322,10 @@
   widget.addEventListener('toggleChat', () => {
     widget.innerHTML = renderBubble(window.businessChatConfig || {});
     isExpanded = false;
-    isTyping = false;
   });
 
   widget.addEventListener('quickQuestion', (e) => {
-    if (!isTyping) {
-      autoReply(e.detail);
-    }
+    autoReply(e.detail);
   });
 
   // Watch for configuration changes

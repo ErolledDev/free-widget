@@ -293,6 +293,10 @@
       messagesContainer.appendChild(closingMessage);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
       hasShownClosingMessage = true;
+
+      // Save the closing message state
+      localStorage.setItem('chatClosingMessageShown', 'true');
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
     }
   
     function autoReply(question) {
@@ -331,25 +335,8 @@
         // Add the question to used questions set
         usedQuestions.add(question);
 
-        // Update quick questions section
-        const quickQuestionsContainer = document.querySelector('.quick-questions');
-        if (quickQuestionsContainer) {
-          const remainingQuestions = config.quickQuestions?.filter(q => !usedQuestions.has(q.question)) || [];
-          quickQuestionsContainer.innerHTML = remainingQuestions.map(q => `
-            <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
-              ${q.question}
-            </button>
-          `).join('');
-
-          // Hide the container if no questions remain
-          if (remainingQuestions.length === 0) {
-            quickQuestionsContainer.style.display = 'none';
-            // Show closing message after a short delay
-            setTimeout(() => {
-              showClosingMessage();
-            }, 1000);
-          }
-        }
+        // Save the used questions to localStorage
+        localStorage.setItem('chatUsedQuestions', JSON.stringify(Array.from(usedQuestions)));
   
         setTimeout(() => {
           if (typingIndicator) {
@@ -376,6 +363,28 @@
   
           buttons.forEach(btn => btn.disabled = false);
           isProcessingQuestion = false;
+
+          // Save messages to localStorage
+          localStorage.setItem('chatMessages', JSON.stringify(messages));
+
+          // Update quick questions section after the bot response
+          const quickQuestionsContainer = document.querySelector('.quick-questions');
+          if (quickQuestionsContainer) {
+            const remainingQuestions = config.quickQuestions?.filter(q => !usedQuestions.has(q.question)) || [];
+            quickQuestionsContainer.innerHTML = remainingQuestions.map(q => `
+              <button class="quick-question-btn" onclick="document.getElementById('business-chat-widget').dispatchEvent(new CustomEvent('quickQuestion', {detail: '${q.question.replace(/'/g, "\\'")}'}))">
+                ${q.question}
+              </button>
+            `).join('');
+
+            // Show closing message only if no questions remain
+            if (remainingQuestions.length === 0) {
+              quickQuestionsContainer.style.display = 'none';
+              setTimeout(() => {
+                showClosingMessage();
+              }, 1000);
+            }
+          }
         }, 1500);
       }
     }
@@ -400,6 +409,20 @@
       const config = window.businessChatConfig || {};
       const color = config.colorScheme || '#4f46e5';
       document.documentElement.style.setProperty('--theme-color', color);
+
+      // Load saved messages and used questions from localStorage
+      const savedMessages = localStorage.getItem('chatMessages');
+      if (savedMessages) {
+        messages = JSON.parse(savedMessages);
+      }
+
+      const savedUsedQuestions = localStorage.getItem('chatUsedQuestions');
+      if (savedUsedQuestions) {
+        usedQuestions = new Set(JSON.parse(savedUsedQuestions));
+      }
+
+      const savedClosingMessageShown = localStorage.getItem('chatClosingMessageShown') === 'true';
+      hasShownClosingMessage = savedClosingMessageShown;
   
       const messagesHtml = messages.map(msg => `
         <div class="message-container ${msg.type}">
@@ -448,7 +471,7 @@
             </div>
             <div class="chat-messages">
               ${messagesHtml}
-              ${remainingQuestions.length === 0 && !hasShownClosingMessage ? `
+              ${hasShownClosingMessage ? `
                 <div class="closing-message">
                   <p>${config.messageClosing || 'To continue chatting please reach us via the link below:'}</p>
                   <a href="${config.messageClosingActionUrl || '#'}" target="_blank" class="closing-action-button">
@@ -457,7 +480,7 @@
                 </div>
               ` : ''}
             </div>
-            ${quickQuestionsHtml}
+            ${remainingQuestions.length > 0 ? quickQuestionsHtml : ''}
           </div>
         </div>
       `;
@@ -471,11 +494,13 @@
     widget.addEventListener('click', () => {
       if (!isExpanded) {
         if (messages.length === 0) {
+          const time = formatTime(new Date());
           messages.push({
             content: window.businessChatConfig?.welcomeMessage || 'Welcome! How can I help you today?',
             type: 'bot',
-            time: formatTime(new Date())
+            time: time
           });
+          localStorage.setItem('chatMessages', JSON.stringify(messages));
         }
         widget.innerHTML = renderChat();
       }
